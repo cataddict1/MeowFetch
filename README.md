@@ -1,5 +1,5 @@
 ![Image](cat.png)
 
-MeowFetch by cataddict1.
+MeowFetch
 
 A very minimal fetch tool.
