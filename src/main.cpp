@@ -1,8 +1,26 @@
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <array>
+#include <cstring>
+#include <cpuid.h>
 
 static std::string cat = " /\\_/\\ \n( O.o )\n/     \\\n"; // cat ascii
+
+std::string get_cpu_name() {
+    std::array<unsigned int, 4> cpui;
+    char brand[0x40];
+    memset(brand, 0, sizeof(brand));
+
+    for (unsigned int i = 0; i < 3; ++i) {
+        __cpuid(0x80000002 + i, cpui[0], cpui[1], cpui[2], cpui[3]);
+        memcpy(brand + i*16, cpui.data(), sizeof(cpui));
+    }
+    return std::string(brand);
+}
+
 
 int main(){
     std::ifstream get_osname("/etc/os-release"); // get the OS name
@@ -30,7 +48,7 @@ int main(){
     std::getline(read_kernel_ver, kernelversion);
     read_kernel_ver.close();
 
-    // get the cpu name
+    // get the cpu name - this part doesn't work
     /*
     std::ifstream get_cpu("/proc/cpuinfo");
     std::string cpu_string;
@@ -66,11 +84,32 @@ int main(){
     get_cpu.close();
     */
 
+
+    // get hostname
+    std::ifstream get_hostname("/etc/hostname");
+    std::string hostname;
+    if (!get_hostname) {
+        std::cout << "Could not get hostname!\n";
+        get_hostname.close();
+        return 1;
+    }
+    std::getline(get_hostname, hostname);
+    get_hostname.close();
+
+    // the visual part
     std::cout << cat << '\n'; // print the ascii cat
     // print info
-    std::cout << "OS: " << osname << '\n';
-    std::cout << "Kernel: " << kernelversion << '\n';
-    // std::cout << "CPU: " << cpu << '\n';
+    std::cout << std::flush;
+    system(R"(echo -n $(whoami) )");
+    std::cout << '@' << hostname << "\n-----------------------";
+    std::cout << "\nOS: " << osname << ' ' << std::flush;
+    system(R"(uname -m)");
+    std::cout << "Kernel: " << kernelversion << "\n";
+    std::cout << "Shell: " << std::flush;
+    system(R"(echo $SHELL)");
+    std::cout << "CPU: " << get_cpu_name() << "\n";
+    std::cout << "GPU:" << std::flush;
+    system(R"(lspci | grep -i 'vga\|3d\|2d' | cut -d: -f3-)");
 
     
     return 0;
